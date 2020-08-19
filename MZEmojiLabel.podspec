@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
   s.authors      = "Mengzhu"
   s.name         = "MZEmojiLabel"
-  s.version      = "1.0.3"
+  s.version      = "1.0.4"
   s.summary      = "MZEmojiLabel is iOS MZ EmojiLabel SDK"
   s.description  = "MZEmojiLabel is iOS MZ EmojiLabel SDK, Welecome."
   s.homepage     = "http://www.zmengzhu.com"
