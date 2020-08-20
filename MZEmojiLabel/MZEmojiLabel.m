@@ -107,8 +107,7 @@ NSString * const kURLActions[] = {@"url->",@"email->",@"phoneNumber->",@"at->",@
         return self.emojiDictRecords[key];
     }
     
-    NSString *emojiFilePath = [NSString stringWithFormat:@"MZEmojiLabel.bundle/%@",key];
-//    NSString *emojiFilePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:key];
+    NSString *emojiFilePath = [NSString stringWithFormat:@"%@/%@",[[MZEmojiLabel getEmojiBundle] bundlePath],key];
     NSDictionary *dict = [[NSDictionary alloc] initWithContentsOfFile:emojiFilePath];
     NSAssert(dict,@"表情字典%@找不到",key);
     self.emojiDictRecords[key] = dict;
@@ -166,7 +165,7 @@ NSString * const kURLActions[] = {@"url->",@"email->",@"phoneNumber->",@"at->",@
     static NSDictionary *emojiDictionary = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        emojiDictionary = [[NSDictionary alloc] initWithContentsOfFile:@"MZEmojiLabel.bundle/mz_emoji_faceExpression.plist"];
+        emojiDictionary = [[NSDictionary alloc] initWithContentsOfFile:[NSString stringWithFormat:@"%@/mz_emoji_faceExpression.plist",[[MZEmojiLabel getEmojiBundle] bundlePath]]];
     });
     return emojiDictionary;
 }
@@ -381,7 +380,7 @@ static inline CGFloat TTTFlushFactorForTextAlignment(NSTextAlignment textAlignme
                 runBounds.origin.y = lineOrigins[lineIndex].y;
                 runBounds.origin.y -= runDescent;
                 
-                NSString *imagePath = [self.customEmojiBundleName?:@"MZEmojiLabel.bundle" stringByAppendingPathComponent:imageName];
+                NSString *imagePath = [self.customEmojiBundleName?:[[MZEmojiLabel getEmojiBundle] bundlePath] stringByAppendingPathComponent:imageName];
                 UIImage *image = [UIImage imageNamed:imagePath];
                 runBounds.origin.y -= emojiOriginYOffset; //稍微矫正下。
                 CGContextDrawImage(c, runBounds, image.CGImage);
