@@ -107,8 +107,8 @@ NSString * const kURLActions[] = {@"url->",@"email->",@"phoneNumber->",@"at->",@
         return self.emojiDictRecords[key];
     }
     
-    
-    NSString *emojiFilePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:key];
+    NSString *emojiFilePath = [NSString stringWithFormat:@"MZEmojiLabel.bundle/%@",key];
+//    NSString *emojiFilePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:key];
     NSDictionary *dict = [[NSDictionary alloc] initWithContentsOfFile:emojiFilePath];
     NSAssert(dict,@"表情字典%@找不到",key);
     self.emojiDictRecords[key] = dict;
@@ -166,19 +166,32 @@ NSString * const kURLActions[] = {@"url->",@"email->",@"phoneNumber->",@"at->",@
     static NSDictionary *emojiDictionary = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        //获取bundle的路径
-        NSString *privateBundlePath = [[NSBundle mainBundle] pathForResource:@"MZEmojiLabel" ofType:@"bundle"];
-        if (privateBundlePath) {
-            //获取bundle
-            NSBundle *privateBundle = [NSBundle bundleWithPath:privateBundlePath];
-            NSString *emojiFilePath = [privateBundle pathForResource:@"mz_emoji_faceExpression" ofType:@"plist"];
-            
-            emojiDictionary = [[NSDictionary alloc] initWithContentsOfFile:emojiFilePath];
-        } else {
-            NSLog(@"MZEmojiLabel.bundle没找到");
-        }
+        emojiDictionary = [[NSDictionary alloc] initWithContentsOfFile:@"MZEmojiLabel.bundle/mz_emoji_faceExpression.plist"];
     });
     return emojiDictionary;
+}
+
+/**
+ * @breif 读取MZEmojiLabel的bundle
+ */
++ (NSBundle *)getEmojiBundle {
+//    if ([bundleName containsString:@".bundle"]) {
+//          bundleName = [bundleName componentsSeparatedByString:@".bundle"].firstObject;
+//      }
+    NSString *bundleName = @"MZEmojiLabel";
+    
+    //没使用framwork的情况下
+    NSURL *associateBundleURL = [[NSBundle mainBundle] URLForResource:bundleName withExtension:@"bundle"];
+    //使用framework形式
+    if (!associateBundleURL) {
+        associateBundleURL = [[NSBundle mainBundle] URLForResource:@"Frameworks" withExtension:nil];
+        associateBundleURL = [associateBundleURL URLByAppendingPathComponent:bundleName];
+        associateBundleURL = [associateBundleURL URLByAppendingPathExtension:@"framework"];
+        NSBundle *associateBunle = [NSBundle bundleWithURL:associateBundleURL];
+        associateBundleURL = [associateBunle URLForResource:bundleName withExtension:@"bundle"];
+    }
+    
+    return associateBundleURL?[NSBundle bundleWithURL:associateBundleURL]:nil;
 }
 
 #pragma mark - 表情 callback
