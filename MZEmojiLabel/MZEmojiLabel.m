@@ -45,18 +45,18 @@ MZ_REGULAREXPRESSION_OPTION(MZ_PoundSignRegularExpression, @"#([\\u4e00-\\u9fa5\
 
 MZ_REGULAREXPRESSION(MZ_SlashEmojiRegularExpression, @"\\[[a-zA-Z0-9\\u4e00-\\u9fa5]+\\]")
 
-const CGFloat kLineSpacing = 4.0;
-const CGFloat kAscentDescentScale = 0.25; //在这里的话无意义，高度的结局都是和宽度一样
+const CGFloat kMZLineSpacing = 4.0;
+const CGFloat kMZAscentDescentScale = 0.25; //在这里的话无意义，高度的结局都是和宽度一样
 
-const CGFloat kEmojiWidthRatioWithLineHeight = 1.15;//和字体高度的比例
+const CGFloat kMZEmojiWidthRatioWithLineHeight = 1.15;//和字体高度的比例
 
-const CGFloat kEmojiOriginYOffsetRatioWithLineHeight = 0.10; //表情绘制的y坐标矫正值，和字体高度的比例，越大越往下
-NSString *const kCustomGlyphAttributeImageName = @"CustomGlyphAttributeImageName";
+const CGFloat kMZEmojiOriginYOffsetRatioWithLineHeight = 0.10; //表情绘制的y坐标矫正值，和字体高度的比例，越大越往下
+NSString *const kMZCustomGlyphAttributeImageName = @"CustomGlyphAttributeImageName";
 
 #define kMZEmojiReplaceCharacter @"\uFFFC"
 
 #define kMZURLActionCount 5
-NSString * const kURLActions[] = {@"url->",@"email->",@"phoneNumber->",@"at->",@"poundSign->"};
+NSString * const kMZURLActions[] = {@"url->",@"email->",@"phoneNumber->",@"at->",@"poundSign->"};
 
 /**
  *  搞个管理器，否则自定义plist的话，每个label都会有个副本很操蛋
@@ -174,23 +174,29 @@ NSString * const kURLActions[] = {@"url->",@"email->",@"phoneNumber->",@"at->",@
  * @breif 读取MZEmojiLabel的bundle
  */
 + (NSBundle *)getEmojiBundle {
+    /// 这里是过滤.bundle
 //    if ([bundleName containsString:@".bundle"]) {
 //          bundleName = [bundleName componentsSeparatedByString:@".bundle"].firstObject;
 //      }
-    NSString *bundleName = @"MZEmojiLabel";
+    static NSBundle *emojiBundle = nil;
     
-    //没使用framwork的情况下
-    NSURL *associateBundleURL = [[NSBundle mainBundle] URLForResource:bundleName withExtension:@"bundle"];
-    //使用framework形式
-    if (!associateBundleURL) {
-        associateBundleURL = [[NSBundle mainBundle] URLForResource:@"Frameworks" withExtension:nil];
-        associateBundleURL = [associateBundleURL URLByAppendingPathComponent:bundleName];
-        associateBundleURL = [associateBundleURL URLByAppendingPathExtension:@"framework"];
-        NSBundle *associateBunle = [NSBundle bundleWithURL:associateBundleURL];
-        associateBundleURL = [associateBunle URLForResource:bundleName withExtension:@"bundle"];
+    if (emojiBundle == nil) {
+        NSString *bundleName = @"MZEmojiLabel";
+        
+        //没使用framwork的情况下
+        NSURL *associateBundleURL = [[NSBundle mainBundle] URLForResource:bundleName withExtension:@"bundle"];
+        //使用framework形式
+        if (!associateBundleURL) {
+            associateBundleURL = [[NSBundle mainBundle] URLForResource:@"Frameworks" withExtension:nil];
+            associateBundleURL = [associateBundleURL URLByAppendingPathComponent:bundleName];//这里的bundleName是pod的工程名字
+            associateBundleURL = [associateBundleURL URLByAppendingPathExtension:@"framework"];
+            NSBundle *associateBunle = [NSBundle bundleWithURL:associateBundleURL];
+            associateBundleURL = [associateBunle URLForResource:bundleName withExtension:@"bundle"];//这里的bundleName是pod的工程里的bundle名字
+        }
+        
+        emojiBundle = associateBundleURL?[NSBundle bundleWithURL:associateBundleURL]:nil;
     }
-    
-    return associateBundleURL?[NSBundle bundleWithURL:associateBundleURL]:nil;
+    return emojiBundle;
 }
 
 #pragma mark - 表情 callback
@@ -230,7 +236,7 @@ static CGFloat widthCallback(void *refCon) {
     
     self.lineBreakMode = NSLineBreakByCharWrapping;
     
-    self.lineSpacing = kLineSpacing; //默认行间距
+    self.lineSpacing = kMZLineSpacing; //默认行间距
     
     //链接默认样式重新设置
     NSMutableDictionary *mutableLinkAttributes = [@{(NSString *)kCTUnderlineStyleAttributeName:@(NO)}mutableCopy];
@@ -289,8 +295,8 @@ static inline CGFloat TTTFlushFactorForTextAlignment(NSTextAlignment textAlignme
 {
     [super drawStrike:frame inRect:rect context:c];
     
-    CGFloat emojiWith = self.font.lineHeight*kEmojiWidthRatioWithLineHeight;
-    CGFloat emojiOriginYOffset = self.font.lineHeight*kEmojiOriginYOffsetRatioWithLineHeight;
+    CGFloat emojiWith = self.font.lineHeight*kMZEmojiWidthRatioWithLineHeight;
+    CGFloat emojiOriginYOffset = self.font.lineHeight*kMZEmojiOriginYOffsetRatioWithLineHeight;
     
     //修正绘制offset，根据当前设置的textAlignment
     CGFloat flushFactor = TTTFlushFactorForTextAlignment(self.textAlignment);
@@ -346,7 +352,7 @@ static inline CGFloat TTTFlushFactorForTextAlignment(NSTextAlignment textAlignme
             //找到此要素所对应的属性
             NSDictionary *attributes = (__bridge NSDictionary *)CTRunGetAttributes((__bridge CTRunRef) glyphRun);
             //判断是否有图像，如果有就绘制上去
-            NSString *imageName = attributes[kCustomGlyphAttributeImageName];
+            NSString *imageName = attributes[kMZCustomGlyphAttributeImageName];
             if (imageName) {
                 CFRange glyphRange = CTRunGetStringRange((__bridge CTRunRef)glyphRun);
                 if (glyphRange.location == truncationAttributePosition) {
@@ -416,7 +422,7 @@ static inline CGFloat TTTFlushFactorForTextAlignment(NSTextAlignment textAlignme
     NSMutableAttributedString *attrStr = [[NSMutableAttributedString alloc] init];
     NSUInteger location = 0;
     
-    CGFloat emojiWith = self.font.lineHeight*kEmojiWidthRatioWithLineHeight;
+    CGFloat emojiWith = self.font.lineHeight*kMZEmojiWidthRatioWithLineHeight;
     for (NSTextCheckingResult *result in emojis) {
         NSRange range = result.range;
         NSAttributedString *attSubStr = [emojiText attributedSubstringFromRange:NSMakeRange(location, range.location - location)];
@@ -468,8 +474,8 @@ static inline CGFloat TTTFlushFactorForTextAlignment(NSTextAlignment textAlignme
             // 这里设置下需要绘制的图片的大小，这里我自定义了一个结构体以便于存储数据
             CustomGlyphMetricsRef metrics = malloc(sizeof(CustomGlyphMetrics));
             metrics->width = emojiWith;
-            metrics->ascent = 1/(1+kAscentDescentScale)*metrics->width;
-            metrics->descent = metrics->ascent*kAscentDescentScale;
+            metrics->ascent = 1/(1+kMZAscentDescentScale)*metrics->width;
+            metrics->descent = metrics->ascent*kMZAscentDescentScale;
             CTRunDelegateRef delegate = CTRunDelegateCreate(&callbacks, metrics);
             [attrStr addAttribute:(NSString *)kCTRunDelegateAttributeName
                             value:(__bridge id)delegate
@@ -477,7 +483,7 @@ static inline CGFloat TTTFlushFactorForTextAlignment(NSTextAlignment textAlignme
             CFRelease(delegate);
             
             // 设置自定义属性，绘制的时候需要用到
-            [attrStr addAttribute:kCustomGlyphAttributeImageName
+            [attrStr addAttribute:kMZCustomGlyphAttributeImageName
                             value:imageName
                             range:__range];
         } else {
@@ -543,7 +549,7 @@ static inline CGFloat TTTFlushFactorForTextAlignment(NSTextAlignment textAlignme
         if (self.disableThreeCommon&&i<kMZURLActionCount-2) {
             continue;
         }
-        NSString *urlAction = kURLActions[i];
+        NSString *urlAction = kMZURLActions[i];
         [regexps[i] enumerateMatchesInString:mutableAttributedString.string options:0 range:stringRange usingBlock:^(NSTextCheckingResult *result, __unused NSMatchingFlags flags, __unused BOOL *stop) {
             
             //检查是否和之前记录的有交集，有的话则忽略
@@ -659,8 +665,8 @@ static inline CGFloat TTTFlushFactorForTextAlignment(NSTextAlignment textAlignme
             
             //判断消息类型
             for (NSUInteger i=0; i<kMZURLActionCount; i++) {
-                if ([result.replacementString hasPrefix:kURLActions[i]]) {
-                    NSString *content = [result.replacementString substringFromIndex:kURLActions[i].length];
+                if ([result.replacementString hasPrefix:kMZURLActions[i]]) {
+                    NSString *content = [result.replacementString substringFromIndex:kMZURLActions[i].length];
                     //type的数组和i刚好对应
                     [self.delegate mzEmojiLabel:self didSelectLink:content withType:i];
                     
